@@ -16,7 +16,7 @@ SDIR="./src" #source path (.c // .cpp files)
 BDIR="./bin" #where the binary file is located after linking
 ODIR="./obj" #where obj files are located when compiling
 
-FILE_EXT="cpp" #Source file extention ("c" or "cpp", DO NOT ADD THE DOT)
+FILE_EXT="" #Source file extention. CAN leave it blank. ("c" or "cpp", DO NOT ADD THE DOT)
 HEADER_EXT="h" #Header file extention ("h" or "hpp", DO NOT ADD THE DOT)
 
 main="main" #Name of the "main" program
@@ -31,6 +31,22 @@ TIME=$(date +%s)
 HEADER_CHANGED=""
 
 clear
+
+# Extention automatic control
+if [ -z "$FILE_EXT" ]; then
+  if [ -f "$SDIR/$main.c" ]; then
+    echo "Chosen file extention is c..."
+    FILE_EXT="c"
+
+  elif [ -f "$SDIR/$main.cpp" ]; then
+    echo "Chosen file extention is cpp..."
+    FILE_EXT="cpp"
+
+  else
+    echo "File extention not found. Did you forget to implement \"$SDIR/$main.c/cpp\"? Cannot resolve issue."
+    exit
+  fi
+fi
 
 # File ext control
 if [ "$FILE_EXT" = "c" ]; then
@@ -120,20 +136,25 @@ for src in $(ls "$SDIR" | grep -E ".+\.$FILE_EXT$"); do
   fi
 done
 
-echo "Linking..."
+echo "Building binary..."
 
 #bin creation
 if [ ! -f "$BDIR/$exec" -o "$has_converted" -eq 1 ]; then
   "$CC" -o "$BDIR/$exec" $(echo "$ODIR/*.o")
-  chmod 700 "$BDIR/$exec"
 fi
 
 echo "$TIME" > ".$DATATIME.log"
 
 #main check
-if [ -f "$SDIR/$main.$FILE_EXT" ]; then
+if [ -f "$SDIR/$main.$FILE_EXT" -a -f "$BDIR/$exec" ]; then
   printf "Success, executed in $(echo "`date +%s`-$TIME" | bc) seconds.\n\n"
+
+  chmod 700 "$BDIR/$exec"
   "$BDIR/$exec"
-else
+
+elif [ ! -f "$SDIR/$main.$FILE_EXT" ]; then
   echo "No \"$main.$FILE_EXT\" found in \"$SDIR\" directory. Cannot run project."
+
+else
+  echo "\"$BDIR/$exec\" not found."
 fi
